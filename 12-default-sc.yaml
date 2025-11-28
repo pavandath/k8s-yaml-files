@@ -1,0 +1,14 @@
+#PVC with the above created storage class
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+
+# It will be created in the default storage class to increase it very simple
+# Just change the number and apply it

@@ -1,0 +1,150 @@
+#Node Name
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-name-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node-name-app
+  template:
+    metadata:
+      labels:
+        app: node-name-app
+    spec:
+      nodeName: gke-cluster-1-default-pool-ba9109f1-zg5f   
+      containers:
+      - image: nginx
+        name: node-name-pod
+        ports:
+        - containerPort: 80
+
+#kubectl get nodes -o wide - to see node names
+#Mentioning  node name is  not correct because if node is not having capacity then it will be pending state
+#To overcome this we use nodeSelector:
+# Where we can specify a label to select the node and mention that label so that pod will be scheduled to that node 
+# There will be no problem if the node stopped and new node is created with different name but with same label 
+#the pod will be scheduled to that node
+---
+#Node Selector
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-name-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node-name-app
+  template:
+    metadata:
+      labels:
+        app: node-name-app
+    spec:
+      nodeSelector:
+        disktype: ssd # nodes with label disktype=ssd on that node this pod will be scheduled
+      containers:
+      - image: nginx
+        name: node-name-pod
+        ports:
+        - containerPort: 80
+
+# To label a node use below command
+# kubectl label nodes <node-name> disktype=ssd (kubectl label node gke-cluster-1-default-pool-ba9109f1-b65t disktype=ssd)
+# To see the labels on node use below command
+# kubectl get nodes --show-labels | grep -i disktype=ssd
+#To remove the label use below command
+# kubectl label nodes <node-name> disktype-
+
+---
+#Node affinity (strict/hard rule)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-affinity-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node-affinity-app
+  template:
+    metadata:
+      labels:
+        app: node-affinity-app
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution: #Hard rule
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: disktype
+                operator: In
+                values:             # values: [ssd, hdd] we can write this way too
+                - ssd                
+                - hdd
+      containers:
+      - image: nginx
+        name: node-affinity-pod
+        ports:
+        - containerPort: 80
+---
+#NotIn
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-affinity-deployment-notin
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node-affinity-app-notin
+  template:
+    metadata:
+      labels:
+        app: node-affinity-app-notin
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution: #Hard rule
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: disktype
+                operator: NotIn
+                values:             # values: [ssd, hdd] we can write this way too
+                - ssd                
+                - hdd
+      containers:
+      - image: nginx
+        name: node-affinity-pod
+        ports:
+        - containerPort: 80
+---
+#Exists
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: node-affinity-deployment-Exists
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: node-affinity-app-Exists
+  template:
+    metadata:
+      labels:
+        app: node-affinity-app-Exists
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution: #Hard rule
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: disktype
+                operator: Exists
+      containers:
+      - image: nginx
+        name: node-affinity-pod
+        ports:
+        - containerPort: 80
+---

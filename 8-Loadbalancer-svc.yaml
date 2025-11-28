@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-app
+  labels: 
+    app: python-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-app-pod
+  template:
+    metadata:
+      labels:
+        app: python-app-pod 
+    spec:
+      containers:
+        - name: python-webpage
+          image: devopswithcloudhub/python_webpage:blue
+          ports:
+          - containerPort: 8080
+
+---
+#service
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-ClusterIP-service
+spec:
+  selector:
+    app: python-app-pod
+  ports:
+  -  name: my-port
+     targetPort: 8080   #target port, also called as container port
+     port: 80           #Serviceport, whoever hits serviceport it will redirect to target port
+     protocol: TCP
+  type: LoadBalancer       #this is default if you don't mention it will consider this one
+

@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pvvol
+spec:
+  nfs:
+    path: /data
+    server: 10.10.0.4
+    readOnly: false
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle #refer to obsidian volumes notes
+
+  # pv are specific to cluster and pvc are spefic to namespaces
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim 
+metadata:
+  name: pvc # this is imp for future reference
+  namespace: default
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Mi
+
+# we dont assign pv to pvc according to the requirement it will automatically attach to it
+#A PVC can request less storage than the PV provides.
+#But once bound, the PVC gets the whole size of the PV — it is not partially allocated.
+PV: 1Gi  ────┐
+             │  PVC requests 500Mi
+PVC: 1Gi  ◀──┘  (gets full PV size once bound)
+
+---
+
+#pvc deploy
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pv-deploy
+spec:
+  selector:
+    matchLabels:
+      app: dev
+  template:
+    metadata:
+      labels:
+        app: dev
+    spec:
+      volumes:
+        - name: my-volume
+          persistentVolumeClaim:
+            claimName: pvc
+      containers:
+        - name: pvc-deploy
+          image: busybox
+          command: ['sh', '-c', 'while true; do echo GEN AI!!!!! >> /output/output.txt; sleep 6; done']
+          volumeMounts:
+            - mountPath: /output 
+              name: my-volume      
+ 
+

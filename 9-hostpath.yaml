@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-pod
+spec:
+                                    # pod can have multiple volumes
+  volumes:
+    - name: my-volume               # THis is important and recommended to be user friendly
+      hostPath:                     # type of the volume
+        path: /var/data             # path of the directory on the host machine 
+  containers:
+    - name: busybox
+      image: busybox
+      command: ['sh', '-c', 'echo This is a volume pod data > /output/volume.txt']
+      volumeMounts:
+        - name: my-volume           # this is the name defined in line 8
+          mountPath: /output        # path of the directory inside the container

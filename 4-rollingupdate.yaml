@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: test-set
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1 
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels: 
+        app: backend
+    spec:
+      containers:
+        - name: replica-cont
+          image: devopswithcloud/nginx:blue
+          ports:
+            - containerPort: 80
+
+# The maximum number of pods that can be unavailable during the update process,
+# here it is set to 1 means at least 2 pods will be available during the update.
+# It means that during the update process, one extra pod can be created above the desired number of pods.
+# Because of this, there can be a temporary increase in the total number of pods to ensure availability.
+# You can write either number or percentage values for maxUnavailable and maxSurge.
+            
+

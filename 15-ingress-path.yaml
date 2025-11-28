@@ -1,0 +1,196 @@
+#Blue Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: blue-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: blue-app
+  template:
+    metadata:
+      labels:
+        app: blue-app
+    spec:
+      containers:
+        - name: bluepod
+          image: devopswithcloudhub/nginx:blue
+          ports:
+            - containerPort: 80
+---
+#Blue service
+apiVersion: v1
+kind: Service
+metadata:
+  name: blue-service
+spec:
+  type: ClusterIP   
+  selector:
+    app: blue-app
+  ports:
+    - port: 80
+      targetPort: 80
+---
+
+# orange Deployment 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orange-deployment 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: orange-app
+  template:
+    metadata:
+      labels:
+        app: orange-app
+    spec:
+      containers:
+      - image: devopswithcloudhub/nginx:orange
+        name: orangepod
+        ports:
+        - containerPort: 80
+---
+# orange Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: orange-service
+spec:
+  type: ClusterIP
+  selector:
+    app: orange-app
+  ports:
+  - port: 80
+    targetPort: 80
+---
+# green Deployment 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: green-deployment 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: green-app
+  template:
+    metadata:
+      labels:
+        app: green-app
+    spec:
+      containers:
+      - image: devopswithcloudhub/nginx:green
+        name: greenpod
+        ports:
+        - containerPort: 80
+---
+# green Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: green-service
+spec:
+  type: ClusterIP
+  selector:
+    app: green-app
+  ports:
+  - port: 80
+    targetPort: 80
+---
+#Ingress resource
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: context-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce" 
+    #gce-internal for internal loadbalancer
+spec:                                 
+  defaultBackend:
+    service:
+      name: orange-service
+      port:
+        number: 80  
+  rules:
+  - http:
+      paths:
+      - pathType: Prefix
+        path: "/blue"
+        backend:
+          service:
+            name: blue-service`
+            port: 
+              number: 80
+      - pathType: Prefix
+        path: "/green"
+        backend:
+          service:
+            name: green-service
+            port:
+              number: 80
+---
+# Request → Load Balancer IP
+#     ↓
+# Check path:
+#     - If path starts with "/blue"  → Route to blue-service
+#     - If path starts with "/green" → Route to green-service  
+#     - Everything else → Route to orange-service (defaultBackend)
+---
+#host based routing
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: host-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+spec:     
+  rules:
+  - host: blue.systemlevelup.online
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: blue-service
+            port:
+              number: 80
+  - host: green.systemlevelup.online
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: green-service
+            port:
+              number: 80
+  - host: orange.systemlevelup.online
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: orange-service
+            port:
+              number: 80
+---
+#we need to create A record in dns and paste the ingress ip
+#Although  the ip is same after entering tthe domain it will follow the domain rulles and map
+
+User types: blue.systemlevelup.in
+         ↓
+DNS Lookup: A record → Ingress IP (34.95.104.57)
+         ↓
+Request reaches GCE Load Balancer
+         ↓
+Ingress checks Host header: "blue.systemlevelup.in"
+         ↓
+Routes to blue-service → blue-pod 🎉
+
+   

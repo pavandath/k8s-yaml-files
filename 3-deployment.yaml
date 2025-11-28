@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: test-set
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels: 
+        app: backend
+    spec:
+      containers:
+        - name: replica-cont
+          image: devopswithcloud/nginx:blue
+          ports:
+            - containerPort: 80
+
+            
+

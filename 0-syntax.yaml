@@ -1,0 +1,23 @@
+# representation of key-value pair
+Fruit: Apple
+Vegetable: Carrot
+car: Benz
+
+# Arrays/lists
+Fruits:
+- Apple
+- Banana
+- Orange
+cars:
+  - Benz
+  - Audi
+  - BMW
+Vegetable:
+  - Carrot
+  - Potato
+  - Tomato
+
+# Dictionaries/Maps
+benz:
+model: C-Class
+year: 2020

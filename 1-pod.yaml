@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Pod
+metadata: 
+  name: test-pod
+  #namespace: test:ns
+spec:
+  containers:
+    - name: nginx-conteiner
+      image: nginx
+      ports:
+        - containerPort: 80
+
+
+---
+# Pod with labels
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: dev-prod
+  #Labels can be user friendly
+  #No restrictions over here
+  labels:
+    app: backend  
+spec:
+  containers:
+    - name: label-container
+      image: nginx
+      ports:
+        - containerPort: 80

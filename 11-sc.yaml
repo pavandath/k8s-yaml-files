@@ -1,0 +1,52 @@
+#kubectl get sc
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: faster #userfriendly name
+provisioner: kubernetes.io/gce-pd #This tells Kubernetes which storage plugin (CSI/Cloud driver) 
+                                  #will create the actual disk when a PVC requests storage
+allowVolumeExpansion: true  #If we dont give this there will be no possiblity for expansion
+parameters:
+  type: pd-ssd 
+
+
+
+---
+#PVC with the above created storage class
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: faster
+# If a PVC does not specify a StorageClass and there is no default StorageClass in the cluster,
+# Kubernetes will not provision a disk automatically and the PVC will stay in a Pending state.
+# If a valid StorageClass is used (or a default one exists), then the PVC will trigger dynamic provisioning 
+# and the disk (PV) will be created automatically.
+---
+#making pod use the above pvc
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sc-deploy
+spec:
+  selector:
+    matchLabels:
+      app: sc
+  template:
+    spec:
+      volumes:
+        - name: sc-volume
+          persistentVolumeClaim:
+            claimName: pvc-claim
+      containers: 
+        - name: sc-container
+          image: nginx
+          volumeMounts:
+            - mountPath: "/usr/share/nginx/html"
+              name: sc-volume

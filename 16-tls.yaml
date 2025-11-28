@@ -1,0 +1,107 @@
+# green Deployment 
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: green-deployment 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: green-app
+  template:
+    metadata:
+      labels:
+        app: green-app
+    spec:
+      containers:
+      - image: devopswithcloudhub/nginx:green
+        name: greenpod
+        ports:
+        - containerPort: 80
+---
+# green Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: green-service
+spec:
+  type: ClusterIP
+  selector:
+    app: green-app
+  ports:
+  - port: 80
+    targetPort: 80
+---
+#Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: context-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+spec:                                
+  rules:
+  - host: green.systemlevelup.online
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:  
+            name: green-service
+            port:
+              number: 80
+
+# Creating a self managed CA certficificate
+# CA certficificate
+
+openssl genrsa -out green.key 2048
+
+#Create certificate signing request (CSR)
+openssl req -new -key green.key -out green.csr -subj "/CN=green.systemlevelup.online"
+
+#Sign the csr with CA certficicate to get SSL certficicate
+openssl x509 -req -days 365 -in green.csr -signkey green.key -out green.crt
+
+# Create TLS secret in Kubernetes
+kubectl create secret tls green-secret --key green.key --cert green.crt
+
+#  if you want to write in yaml file you need to mention type: kubernetes.io/tls
+
+apiVersion: v1
+kind: Secret
+metadata:
+  creationTimestamp: "2025-11-26T11:43:49Z"
+  name: green-secret
+  namespace: default
+  resourceVersion: "1764157429180399015"
+  uid: cd7f1f7b-15cd-404b-a2fb-0936624427a4
+type: kubernetes.io/tls
+data:
+  tls.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUMwVENDQWJrQ0ZDOS82bEQ0SzY2d2NsK0pKL0tnbWhLT1laZStNQTBHQ1NxR1NJYjNEUUVCQ3dVQU1DVXgKSXpBaEJnTlZCQU1NR21keVpXVnVMbk41YzNSbGJXeGxkbVZzZFhBdWIyNXNhVzVsTUI0WERUSTFNVEV5TmpFeApNell6TmxvWERUSTJNVEV5TmpFeE16WXpObG93SlRFak1DRUdBMVVFQXd3YVozSmxaVzR1YzNsemRHVnRiR1YyClpXeDFjQzV2Ym14cGJtVXdnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFDcUJRUEYKRnFXUTRVT0JVbWc4b1R6UWRPMXhlQXRjazVKdHkxVjlURm8rOHJWaWJSNlJzSUZSaFhqU25KQVlrcFgrWHpwVApYOExSWDZZVkMzRG1xNmFqTG9IcCsxb00vUjdUcWhCTzR1b0dEK0UyM1dybjRKeS9Bd2pyR2ZvOEo2YTNyOHdKCnhhRE9nNDRHU2Rid1BpYmltejRicXR5clRqZitTdldxQ293blczTDFSd1BVZE90THZiYjRjR3dqK1dGR043NGYKa2xTbWEremFpWTVIMXltSDZPemN1VGVSTXFIcEd3QUlVTFJUNlVzb1BIN0t1QjRpNmVYeTd2TmNnMHhudmdpMApXK3pLMXFtODV2Z243UEp6WmZHMmMyZWZvd1ZjL1ViTW1SZ3M2VzVTRm5rNWhjRXlrM3d3SDJ2NWVKVmxPb3ZuCmU1ZDRnMmZpMDJvRWdmUTdBZ01CQUFFd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ2dFQkFCQ2Z0eDAzVVlEbW5vbHAKUVdkV09MQ1h6OU80NGlmR3NMQ0VNU0dETW16aVVyNGNqT3psUFlkNmo3SWprRjNKU0ZTblFrT0gzZ1NUZkxzLwprWUQvQlNoaGMraHdYS0Zndnd2VDFrY1lrU2FFK0srMHFRTklEWFAydWNOZ29IK0xqNTVDQ0tMdUlGZkxiOGJVCmx3SVg3ZHZJY0doUUZrMno0eTZaaWRUSmVjZjJNamEvUUkwcll2QXZSNUROY0ZlSkRMWkVlLzFtYVVCSFV0T0UKc2VKRThJNlpXS0wyMGRMUzRCNWt0R2Zkbngvb2NXVTJSMVBYam12WmROYnRpRUlHamZpMy8xcFdwc3d0ekprMApDZFA5VUVWV2dDdjBZaXFGOXRjaVNOKzl1UTRyWGR2aHV4Y2U5QjZQUWQ3ZmZ5eEFmWjNxQklCMHc2em5xRWNRCnVwbzlyc289Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  tls.key: LS0tLS1CRUdJTiBQUklWQVRFIEtFWS0tLS0tCk1JSUV2QUlCQURBTkJna3Foa2lHOXcwQkFRRUZBQVNDQktZd2dnU2lBZ0VBQW9JQkFRQ3FCUVBGRnFXUTRVT0IKVW1nOG9UelFkTzF4ZUF0Y2s1SnR5MVY5VEZvKzhyVmliUjZSc0lGUmhYalNuSkFZa3BYK1h6cFRYOExSWDZZVgpDM0RtcTZhakxvSHArMW9NL1I3VHFoQk80dW9HRCtFMjNXcm40SnkvQXdqckdmbzhKNmEzcjh3SnhhRE9nNDRHClNkYndQaWJpbXo0YnF0eXJUamYrU3ZXcUNvd25XM0wxUndQVWRPdEx2YmI0Y0d3aitXRkdONzRma2xTbWEremEKaVk1SDF5bUg2T3pjdVRlUk1xSHBHd0FJVUxSVDZVc29QSDdLdUI0aTZlWHk3dk5jZzB4bnZnaTBXK3pLMXFtOAo1dmduN1BKelpmRzJjMmVmb3dWYy9VYk1tUmdzNlc1U0ZuazVoY0V5azN3d0gydjVlSlZsT292bmU1ZDRnMmZpCjAyb0VnZlE3QWdNQkFBRUNnZ0VBQm9TZnN1QWQ0OUtIQkgrMHlGSkVJeGZBZkorbUM5d0tlcFFYaUhDemF3TmkKQ2M1MkpBNjR2bmZYL0hjTkhTd05mUTJJam1hMjhORHliSThlT25HdE4wZFNxclk4cXcvUExUMHhWOXppTE81Ugo2NGtNanF3eFJpOW5HYUJLMUNDUEJ5N0JxMFE4MkgzNXBXc1NSdTZURGcvMmp4ZjdVc1B5YUpqV0Z6bEZTMExwCnNocWRCbXYrVVZGSFkxak9yd1BqM2lRVGpkTDlhcytXTCt4OGhFRGhjRTBTL1lCaEpSUVNxQlZ4SFhWamsrcWYKRzhPRnJTbWw0NVdqa0V6Wm5SNVdSaG5IZEJYTkRnZnU3UFlnbmsvaXlKVGdUeXR0K0U0dHBqbEZ1ZHE2V1lyYwpQdXV2YXliRXpySVFDMUVIanQzVlRQdENERDVqaldscFVGSFl4N1BSSVFLQmdRRGs1cHVMSjVsOGNDVmFxbFZICjdGMHdWRzVrekZ0d3dwOVNVSDBML1NGZzNKZ1h5RzBYUVNJb1Z4U2M4bmRHS01jSEtYdlM1VkkwS2t3YVJaeVEKQzFtRjk1WWRra2UxSzBRWCtNbWI2Q3pjeUYrUWMwVFhpbDZISFJLMkFsTm45Zld3RUVNTzd6eTZJODIvbFkvZQpWT2xlNHJPcTJRMTlxODlNd0hCNnIyWUZvUUtCZ1FDK0pkNk9iTjQxNjVVSE5yUEZPTzFiNDEvc1hQM09rR2JECnBxbVVUVkdiR3dtVXgxVVQ0dXJhYzgzclg4VkFsNkNCWlZmVkNvRVFBT3JwWW1QZTl1U25SQlUzVDJUemh0QjQKNmw2QzN5aGNJUEpycG8xQmdHUHVWdG1CQ1AyVWVRN0VDVWliRDdyaytweC9ZVDFrTHhjNFFzblJkNGxnbFRwUwo1Vlp4Y1JGMFd3S0JnQlkrdHdVSi95ZVJ1bithS0JtS1JmQXBkR1VGV3ltVk1HaU9lK2lMWEJBT3dCVW5uRHB6ClVQOThudnMxc1JPM2FNZ3dadUV5K2c4cHdTV1llRU9qWnJyWE9kWjczYzRrZTBTZEgvS3YySlJJUU1sSCtudTcKN2IzUnZIekZzeGRhVnRzYWFYbnRGQWkrN0FMZlpSRGxUWnkwQ1dQa0hpU0ZhdXI1bExUSGtQR2hBb0dBQ2JkNwpzUUdGTlhJdGNtbnNNOWJkNGtVelFLdmIySE51bk83bVdZcTk4ZFFtNERCemU0bXNBSy9NUlF2bTA0OHNCNUM3Ck5Vck5INWs4WitLOFFjZVNGYTRYKzNTV0x3K2psWm84YkNtbE1WZ0pxMUNlaFV0ZlQrMm1QYjdNM29wMUk3VnAKdldySFhTNGxVeWtQN3crcyt4WUdwQ3FjblkvaXBCdk9HQXYwSFdNQ2dZQVBiSHlxeG54TmVldmxyOEpkeTlCaQp4UDg4OHVQbTJlSHFFdTNIbVZ5bFVSSHBIOGR0SFpPbDJvSGExbGhlVHVhVHJ1clBqQlhXN1MvSFNrZVVRSlowCnRTWjZtcWFTUTVhQ0tJci8rZlYxVG1VMUIyVUFLR01UYk1OU216V1ppNWVGbldzZEJrWGNoNzQ3TFRrbXgxNE4KWHhkNk1vb1VFcEYxYklna1g2QmdIdz09Ci0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS0K
+
+# We must convert the certificate and key to base64 format while creating the secret in yaml file.
+---
+
+#Ingress with tls (https)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: context-ingress
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+spec:                  
+  tls:
+  - secretName: green-secret              
+  rules:
+  - host: green.systemlevelup.online
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:  
+            name: green-service
+            port:
+              number: 80

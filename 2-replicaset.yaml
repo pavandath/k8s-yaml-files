@@ -1,0 +1,71 @@
+#kubectl get rs
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: test-set
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels: 
+        app: backend
+    spec:
+      containers:
+        - name: replica-cont
+          image: nginx
+          ports:
+            - containerPort: 80
+---
+#Match expressions
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: expressions-set
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      env: dev
+    matchExpressions:
+      - {key: tier,operator: In, values: [frontend]}
+      - {key: loc,operator: NotIn,values: [hyderabad, bangalore] }
+  template:
+    metadata:
+      labels:
+        env: dev
+        tier: frontend
+        loc: chennai
+    spec:
+      containers:
+        - name: expr-cont
+          image: nginx
+          ports:
+            - containerPort: 80
+
+
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: test-set
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels: 
+        app: backend
+    spec:
+      containers:
+        - name: replica-cont
+          image: devopswithcloud/nginx:blue
+          ports:
+            - containerPort: 80
+
+
+      

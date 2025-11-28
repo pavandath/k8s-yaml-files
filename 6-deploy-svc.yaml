@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: python-app
+  labels: 
+    app: python-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: python-app-pod
+  template:
+    metadata:
+      labels:
+        app: python-app-pod 
+    spec:
+      containers:
+        - name: python-webpage
+          image: devopswithcloudhub/python_webpage:blue
+          ports:
+          - containerPort: 8080
+
+---
+#service
+apiVersion: v1
+kind: Service
+metadata:
+  name: python-nodeport-service
+spec:
+  selector:
+    app: python-app-pod
+  ports:
+  -  name: my-port
+     targetPort: 8080   #target port, also called as container port
+     port: 80           #Serviceport, whoever hits serviceport it will redirect to target port
+     protocol: TCP
+  type: NodePort        #type: NodePort, ClusterIp, loadbalancer
+  
+
+
+kubectl get svc
+NAME                      TYPE        CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+kubernetes                ClusterIP   10.96.0.1       <none>        443/TCP        18d
+python-nodeport-service   NodePort    10.107.243.26   <none>        80:31502/TCP   16s
+
+Here 80:31502 80 is the service port and 31502 is the node port take any of the vm ip and ip:nodeport 
+Now you can access the application 
+  
+
+
+
+
+           
