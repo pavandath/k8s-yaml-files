@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: replica-cont
-          image: devopswithcloudhub/nginx:blue
+          image: nginx
           ports:
             - containerPort: 80
 
