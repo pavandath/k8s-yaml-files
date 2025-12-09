@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harness-python-app-buggy
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: harness-python-app-buggy
+  template:
+    metadata:
+      labels:
+        app: harness-python-app-buggy
+    spec:
+      containers:
+      - name: app
+        image: pavandath510/harness-py-app:latest  # Same image, but will fail
+        ports:
+        - containerPort: 8080
+        # BUG 1: Wrong readiness probe (port 9999 doesn't exist)
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 9999  # WRONG PORT - Will fail!
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          failureThreshold: 3
+        # BUG 2: Very strict liveness probe
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 3  # Too short
+          periodSeconds: 3        # Too frequent
+          failureThreshold: 1     # Too strict
+        # BUG 3: Memory limit too low (if your app needs more)
+        resources:
+          limits:
+            memory: "10Mi"  # Too low - will cause OOM kill
+            cpu: "50m"
