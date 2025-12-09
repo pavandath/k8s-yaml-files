@@ -18,13 +18,6 @@ spec:
         image: pavandath510/harness-py-app:latest
         ports:
         - containerPort: 8080
-        # Health checks (important for AI monitoring)
-        livenessProbe:
-          httpGet:
-            path: /  # Use root if no /health endpoint
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
 
 ---
 apiVersion: v1
