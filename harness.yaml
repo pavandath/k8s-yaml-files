@@ -18,9 +18,26 @@ spec:
         image: pavandath510/harness-py-app:latest
         ports:
         - containerPort: 8080
-        # ADD THIS TO CRASH (for rollback test):
+        # Buggy version
         command: ["/bin/sh"]
         args: ["-c", "echo 'Buggy version' && sleep 5 && exit 1"]
+        # ADD HEALTH CHECKS - This makes pipeline detect failure!
+        livenessProbe:
+          exec:
+            command:
+            - sh
+            - -c
+            - "exit 1"  # Always fails - pod will be unhealthy
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - sh  
+            - -c
+            - "exit 1"  # Always fails - pod will never be "ready"
+          initialDelaySeconds: 2
+          periodSeconds: 5
 
 ---
 apiVersion: v1
