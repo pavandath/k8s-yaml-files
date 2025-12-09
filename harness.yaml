@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: harness-python-app  # Same name!
+  name: harness-python-app
   namespace: default
 spec:
   replicas: 2
@@ -18,9 +18,21 @@ spec:
         image: pavandath510/harness-py-app:latest
         ports:
         - containerPort: 8080
-        # THIS WILL CRASH IMMEDIATELY:
-        command: ["/bin/sh"]
-        args: ["-c", "exit 1"]  # Container exits with error immediately!
+        # NO crash command! Let app run normally
+        # AI will monitor and rollback if issues detected
+        
+        # Optional: Add resource limits to stress the app
+        resources:
+          limits:
+            memory: "128Mi"  # Low memory might cause issues
+            cpu: "100m"
+        # Health checks
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
 
 ---
 apiVersion: v1
@@ -34,5 +46,4 @@ spec:
   ports:
   - port: 80
     targetPort: 8080
-    nodePort: 30080  # Optional, remove if you want random port
-  type: NodePort
+  type: ClusterIP  # Simpler than NodePort
