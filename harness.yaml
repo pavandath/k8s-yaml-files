@@ -18,22 +18,9 @@ spec:
         image: pavandath510/harness-py-app:latest
         ports:
         - containerPort: 8080
-        # NO crash command! App runs normally
-        # But might have performance issues
-        
-        # Add health checks
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        
-        # Optional: Add tight resources to stress app
-        resources:
-          limits:
-            memory: "128Mi"
-            cpu: "100m"
+        # ADD THIS TO CRASH (for rollback test):
+        command: ["/bin/sh"]
+        args: ["-c", "echo 'Buggy version' && sleep 5 && exit 1"]
 
 ---
 apiVersion: v1
